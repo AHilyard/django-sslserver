@@ -25,11 +25,17 @@ else:
 class SecureHTTPServer(WSGIServer):
     def __init__(self, address, handler_cls, certificate, key):
         super(SecureHTTPServer, self).__init__(address, handler_cls)
+        if hasattr(ssl, 'PROTOCOL_TLS'):
+            ssl_protocol = ssl.PROTOCOL_TLS
+        elif hasattr(ssl, 'PROTOCOL_TLSv1_2'):
+            ssl_protocol = ssl.PROTOCOL_TLSv1_2
+        else:
+            ssl_protocol = ssl.PROTOCOL_TLSv1
+            
         self.socket = ssl.wrap_socket(self.socket, certfile=certificate,
                                       keyfile=key, server_side=True,
-                                      ssl_version=ssl.PROTOCOL_TLSv1_2,
+                                      ssl_version=ssl_protocol,
                                       cert_reqs=ssl.CERT_NONE)
-
 
 class WSGIRequestHandler(WSGIRequestHandler):
     def get_environ(self):
