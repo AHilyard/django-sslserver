@@ -46,23 +46,6 @@ def default_ssl_files_dir():
 
 
 class Command(runserver.Command):
-    def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
-        parser.add_argument("--certificate",
-                            default=os.path.join(default_ssl_files_dir(),
-                                "development.crt"),
-                            help="Path to the certificate"),
-        parser.add_argument("--key",
-                            default=os.path.join(default_ssl_files_dir(),
-                                "development.key"),
-                            help="Path to the key file"),
-        parser.add_argument("--nostatic", dest='use_static_handler',
-                            action='store_false', default=None,
-                            help="Do not use internal static file handler"),
-        parser.add_argument("--static", dest='use_static_handler',
-                            action='store_true',
-                            help="Use internal static file handler"),
-
     help = "Run a Django development server over HTTPS"
 
     def get_handler(self, *args, **options):
@@ -166,3 +149,51 @@ class Command(runserver.Command):
                 self.stdout.write(shutdown_message)
             sys.exit(0)
 
+            
+            
+arg_list = [{
+                "command": "--certificate",
+                "default": os.path.join(default_ssl_files_dir(), "development.crt"),
+                "help": "Path to the certificate"
+            },
+            {
+                "command": "--key",
+                "default": os.path.join(default_ssl_files_dir(), "development.key"),
+                "help": "Path to the key file"
+            },
+            {
+                "command": "--nostatic",
+                "dest": "use_static_handler",
+                "action": "store_false",
+                "default": None,
+                "help": "Do not use internal static file handler"
+            },
+            {
+                "command": "--static",
+                "dest": "use_static_handler",
+                "action": "store_true",
+                "default": None,
+                "help": "Use internal static file handler"
+            },
+           ]
+
+# Modify the Command class depending on Django version.
+if LooseVersion(get_version()) >= LooseVersion('1.8'):
+    def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser)
+        for argument in arg_list:
+            parser.add_argument(argument.get("command"),
+                                dest=argument.get("dest"),
+                                action=argument.get("action"),
+                                default=argument.get("default"),
+                                help=argument.get("help"))
+    Command.add_arguments = add_arguments
+else:
+    Command.option_list = runserver.Command.option_list
+    for argument in arg_list:
+        Command.option_list += (make_option(argument.get("command"),
+                                    dest=argument.get("dest"),
+                                    action=argument.get("action"),
+                                    default=argument.get("default"),
+                                    help=argument.get("help")), )
+        
